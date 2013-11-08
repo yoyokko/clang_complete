@@ -478,7 +478,7 @@ def getCurrentCompletions(base):
   timer.registerEvent("Count # Results (%s)" % str(len(results)))
 
   if base != "":
-    results = filter(lambda x: getAbbr(x.string).startswith(base), results)
+    results = filter(lambda x: getAbbr(x.string)[:len(base)].lower() == base, results)
 
   timer.registerEvent("Filter")
 
