@@ -7,7 +7,13 @@
 " Help: Use :help clang_complete
 "
 
+if exists('g:clang_complete_loaded')
+  finish
+endif
+let g:clang_complete_loaded = 1
+
 au FileType c,cpp,objc,objcpp call <SID>ClangCompleteInit()
+au FileType c.*,cpp.*,objc.*,objcpp.* call <SID>ClangCompleteInit()
 
 let b:clang_parameters = ''
 let b:clang_user_options = ''
@@ -111,6 +117,10 @@ function! s:ClangCompleteInit()
     let g:clang_jumpto_back_key = '<C-T>'
   endif
 
+  if !exists('g:clang_make_default_keymappings')
+    let g:clang_make_default_keymappings = 1
+  endif
+
   call LoadUserOptions()
 
   let b:my_changedtick = b:changedtick
@@ -144,12 +154,14 @@ function! s:ClangCompleteInit()
 
   python snippetsInit()
 
-  inoremap <expr> <buffer> <C-X><C-U> <SID>LaunchCompletion()
-  inoremap <expr> <buffer> . <SID>CompleteDot()
-  inoremap <expr> <buffer> > <SID>CompleteArrow()
-  inoremap <expr> <buffer> : <SID>CompleteColon()
-  execute "nnoremap <buffer> <silent> " . g:clang_jumpto_declaration_key . " :call <SID>GotoDeclaration()<CR><Esc>"
-  execute "nnoremap <buffer> <silent> " . g:clang_jumpto_back_key . " <C-O>"
+  if g:clang_make_default_keymappings == 1
+    inoremap <expr> <buffer> <C-X><C-U> <SID>LaunchCompletion()
+    inoremap <expr> <buffer> . <SID>CompleteDot()
+    inoremap <expr> <buffer> > <SID>CompleteArrow()
+    inoremap <expr> <buffer> : <SID>CompleteColon()
+    execute "nnoremap <buffer> <silent> " . g:clang_jumpto_declaration_key . " :call <SID>GotoDeclaration()<CR><Esc>"
+    execute "nnoremap <buffer> <silent> " . g:clang_jumpto_back_key . " <C-O>"
+  endif
 
   " Force menuone. Without it, when there's only one completion result,
   " it can be confusing (not completing and no popup)
@@ -283,6 +295,8 @@ function! s:initClangCompletePython()
       return 0
     endif
     let s:libclang_loaded = 1
+
+    au VimLeavePre * python ForceExit()
   endif
   python WarmupCache()
   return 1
@@ -363,8 +377,10 @@ function! ClangComplete(findstart, base)
     python vim.command('let l:res = ' + completions)
     python timer.registerEvent("Load into vimscript")
 
-    inoremap <expr> <buffer> <C-Y> <SID>HandlePossibleSelectionCtrlY()
-    inoremap <expr> <buffer> <CR> <SID>HandlePossibleSelectionEnter()
+    if g:clang_make_default_keymappings == 1
+      inoremap <expr> <buffer> <C-Y> <SID>HandlePossibleSelectionCtrlY()
+      inoremap <expr> <buffer> <CR> <SID>HandlePossibleSelectionEnter()
+    endif
     augroup ClangComplete
       au CursorMovedI <buffer> call <SID>TriggerSnippet()
     augroup end
